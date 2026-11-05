@@ -125,7 +125,7 @@ input[type=password],input[type=text]{width:100%;padding:10px;border-radius:10px
 <script>
 /* global TextEncoder, TextDecoder, MediaMetadata */
 'use strict';
-const APP_VERSION = '2026.11.06-0630';
+const APP_VERSION = '2026.11.06-0634';
 const STORE_KEY = 'oet-listening-commute-v1';
 const PASS_KEY = 'oet-listening-commute-pass';
 const AUDIO_CACHE = 'oet-lc-audio-v1';
@@ -402,7 +402,8 @@ function onSentEnd(){
   if (S.set.mode === 'step'){ au.pause(); paintPlayer(); return; }
   // repeat
   P.rep++;
-  const gap = Math.max(0.6, (e - s) * S.set.gap / S.set.speed);
+  // 「なし」は頭出しに要る最小限（0.15秒）だけ。それ以外は短すぎないよう0.6秒以上
+  const gap = S.set.gap === 0 ? 0.15 : Math.max(0.6, (e - s) * S.set.gap / S.set.speed);
   const next = P.rep < S.set.reps ? () => playSent(P.i, true)
     : (P.queue ? () => nextInQueue() : (P.i + 1 < tr.sents.length ? () => playSent(P.i + 1) : () => { au.pause(); paintPlayer(); }));
   if (P.rep >= S.set.reps && !P.queue && P.i + 1 >= tr.sents.length){ au.pause(); toast('最後の文まで聞きました'); paintPlayer(); return; }

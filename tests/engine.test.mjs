@@ -129,3 +129,11 @@ test('⭐を順に再生：別トラックの⭐にも移る', async () => {
   assert.equal(app.$('P.qi'), 1);
   assert.equal(typeof au.currentTime, 'number');
 });
+
+test('文の間「なし」はほぼ間を空けない（0.6秒の下限を当てない）', () => {
+  const { app, au, tick } = setup('repeat', { reps: 2, gap: 0 });
+  app.$('playSent(0)');
+  tick(3.0);
+  assert.ok(Math.abs(app.$('P.gapUntil') - 3.15) < 0.01, String(app.$('P.gapUntil')));
+  assert.equal(typeof au.muted, 'boolean');
+});

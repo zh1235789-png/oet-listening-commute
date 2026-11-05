@@ -22,6 +22,6 @@
 
 ```bash
 ~/whisper-env/bin/python build/prepare.py   # 圧縮＋文字起こし（未処理分だけ）
-python3 build/build.py                      # 暗号化して a/ と data.enc.json を作る
+python3 build/build.py                      # 暗号化して a/ と data.enc.json を作る（途中なら --partial）
 node --test "tests/*.test.mjs"
 ```

@@ -1,6 +1,7 @@
 """公開用ファイルを作る。
 
-  python3 build/build.py
+  python3 build/build.py             # 全トラックがそろっている時
+  python3 build/build.py --partial   # 文字起こしの途中でも、できた分だけ公開する
 
   入力: 圧縮音声 ~/.cache/oet-listening-commute/m4a/<id>.m4a（prepare.py が作る）
         文字起こし iCloud 英語学習/OET/Listening通勤_非公開/transcripts/<id>.json
@@ -29,6 +30,7 @@ from segment import segment  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 CONF = Path.home() / '.config/oet-listening-commute'
 PASS_FILES = [os.environ.get('OET_PASS_FILE'), CONF / 'passphrase', Path.home() / '.config/oet-reading-commute/passphrase']
+PARTIAL = '--partial' in sys.argv
 ITERATIONS = 200_000  # Reading通勤ドリル・デイリーホームと同じ（PBKDF2-SHA256 → AES-GCM 256bit）
 
 
@@ -76,7 +78,7 @@ def encrypt_json(obj, pw):
 def main():
     key, pw = audio_key(), passphrase()
     (ROOT / 'a').mkdir(exist_ok=True)
-    tests, missing, keep = [], [], set()
+    tests, missing = [], []
     for t in scan():
         tracks = []
         for tr in t['tracks']:
@@ -90,7 +92,6 @@ def main():
             out = ROOT / 'a' / f"{tr['id']}.bin"
             if not out.exists() or out.read_bytes() != enc:
                 out.write_bytes(enc)
-            keep.add(out.name)
             d = json.loads(tj.read_text(encoding='utf-8'))
             sents = segment(d['words'], d.get('dur'))
             if not sents:
@@ -99,8 +100,13 @@ def main():
                            'size': len(enc), 'sha': hashlib.sha256(enc).hexdigest()[:10], 'sents': sents})
         if tracks:
             tests.append({'id': t['id'], 'title': t['title'], 'group': t['group'], 'tracks': tracks})
+    if missing and not PARTIAL:
+        raise SystemExit(f'音声か文字起こしが無いトラックが{len(missing)}件あります（{" ".join(missing[:8])}…）。'
+                         '途中のまま公開するなら --partial を付ける')
+    # 消すのは一覧から外れたトラックの .bin だけ。入力が一時的に読めないだけで公開中の音声を消さない
+    known = {tr['id'] + '.bin' for t in scan() for tr in t['tracks']}
     for f in (ROOT / 'a').glob('*.bin'):
-        if f.name not in keep:
+        if f.name not in known:
             f.unlink()
     env = encrypt_json({'k': b(key), 'tests': tests}, pw)
     (ROOT / 'data.enc.json').write_text(json.dumps(env, separators=(',', ':')), encoding='utf-8')
