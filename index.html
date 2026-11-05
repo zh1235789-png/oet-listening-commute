@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OET Listening 通勤リスニング</title>
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Listening">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<style>
+:root{
+  --bg:#0f172a; --card:#1e293b; --card2:#273548; --line:#334155;
+  --txt:#e2e8f0; --dim:#94a3b8; --faint:#64748b;
+  --acc:#2dd4bf; --acc2:#0f766e; --A:#f59e0b; --B:#a78bfa; --C:#38bdf8;
+  --ok:#22c55e; --bad:#ef4444; --star:#facc15; --cur:rgba(45,212,191,.16);
+  --fs:18px;
+}
+@media (prefers-color-scheme: light){
+  :root{--bg:#f8fafc;--card:#ffffff;--card2:#f1f5f9;--line:#e2e8f0;--txt:#0f172a;--dim:#475569;--faint:#94a3b8;
+    --acc:#0d9488;--acc2:#0f766e;--A:#d97706;--B:#7c3aed;--C:#0284c7;--star:#ca8a04;--cur:rgba(13,148,136,.12)}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",sans-serif;
+  padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 76px);line-height:1.55}
+header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 92%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:10px 16px 8px;border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;gap:8px}
+h1{font-size:16px;margin:0;flex:1}
+.fsbtn{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:8px;height:30px;min-width:34px;font-size:13px;font-weight:700}
+main{padding:14px 16px;max-width:640px;margin:0 auto}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:10;display:flex;background:color-mix(in srgb,var(--bg) 94%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:6px 8px calc(env(safe-area-inset-bottom) + 6px)}
+nav button{flex:1;background:none;border:none;color:var(--faint);font-size:11px;font-weight:600;padding:6px 0;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button .ic{font-size:20px;line-height:1}
+nav button.on{color:var(--txt)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.muted{color:var(--dim);font-size:13px}
+.tiny{color:var(--faint);font-size:12px}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--card2);color:var(--dim);border:1px solid var(--line)}
+.pill.A{color:var(--A);border-color:color-mix(in srgb,var(--A) 45%,transparent)}
+.pill.B{color:var(--B);border-color:color-mix(in srgb,var(--B) 45%,transparent)}
+.pill.C{color:var(--C);border-color:color-mix(in srgb,var(--C) 45%,transparent)}
+.bigbtn{display:block;width:100%;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;color:#fff;margin-top:10px;background:var(--acc2)}
+.bigbtn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.bigbtn:disabled{opacity:.5}
+.stats{display:flex;gap:10px}
+.stat{flex:1;background:var(--card2);border-radius:10px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px}
+.stat span{font-size:11px;color:var(--dim)}
+h2{font-size:15px;margin:0 0 8px}
+h3{font-size:12px;letter-spacing:.06em;color:var(--dim);margin:18px 0 8px}
+/* 一覧 */
+.test{display:flex;flex-direction:column;gap:8px}
+.thead{display:flex;align-items:center;gap:8px}
+.thead b{flex:1;font-size:15px}
+.tracks{display:flex;flex-wrap:wrap;gap:6px}
+.tr{position:relative;background:var(--card2);border:1.5px solid var(--line);color:var(--txt);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:700;min-width:76px;text-align:left;overflow:hidden}
+.tr small{display:block;font-weight:500;color:var(--dim);font-size:11px}
+.tr .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--acc)}
+.tr.cur{border-color:var(--acc)}
+.dl{background:none;border:1px solid var(--line);color:var(--dim);border-radius:8px;font-size:12px;padding:4px 8px}
+/* 再生 */
+.now{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.now b{flex:1;font-size:14px}
+.prog{height:6px;background:var(--card2);border-radius:99px;overflow:hidden;margin:4px 0 12px}
+.prog i{display:block;height:100%;background:var(--acc)}
+.sent{min-height:150px;display:flex;flex-direction:column;justify-content:center;font-size:var(--fs);line-height:1.6;
+  font-family:Georgia,"Times New Roman",serif;cursor:pointer;position:relative}
+.sent .hid{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;color:var(--faint);font-size:14px;text-align:center}
+.sent .txt.blur{filter:blur(7px);user-select:none}
+.sent .no{position:absolute;top:0;left:0;font-family:-apple-system,sans-serif;font-size:11px;color:var(--faint)}
+.starbtn{position:absolute;top:-6px;right:-6px;background:none;border:none;font-size:24px;padding:6px;color:var(--faint)}
+.starbtn.on{color:var(--star)}
+.ctrl{display:grid;grid-template-columns:1fr 1fr 1.3fr 1fr;gap:10px;margin:4px 0 12px}
+.ctrl button{height:64px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--txt);font-size:24px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;font-weight:700}
+.ctrl button small{font-size:10px;color:var(--dim);font-weight:600}
+.ctrl button.play{background:var(--acc2);color:#fff;border-color:var(--acc2)}
+.ctrl button.play small{color:#d1fae5}
+.seg{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:none;color:var(--dim);font-size:13px;font-weight:700;border-radius:8px;padding:8px 0}
+.seg button.on{background:var(--card);color:var(--txt);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.optrow{display:flex;align-items:center;gap:10px;margin-top:10px}
+.optrow > span{font-size:12px;color:var(--dim);width:64px;flex:none}
+.optrow .seg{flex:1}
+.script{font-family:Georgia,"Times New Roman",serif;font-size:calc(var(--fs) - 2px);line-height:1.6}
+.script p{margin:0;padding:6px 8px;border-radius:8px;cursor:pointer;display:flex;gap:8px}
+.script p .t{flex:1}
+.script p .tm{font-family:-apple-system,sans-serif;font-size:11px;color:var(--faint);width:38px;flex:none;padding-top:3px}
+.script p.cur{background:var(--cur)}
+.script p.locked .t{color:var(--faint);font-family:-apple-system,sans-serif;font-size:13px}
+.script p .st{color:var(--star)}
+.msg{padding:10px 12px;border-radius:10px;background:var(--card2);font-size:13px;margin-bottom:10px}
+.msg.err{color:var(--bad)}
+input[type=password],input[type=text]{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--txt);font-size:16px}
+.rv{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.rv:first-child{border-top:none}
+.rv .t{flex:1;font-family:Georgia,serif;font-size:calc(var(--fs) - 2px);line-height:1.5}
+.rv .t.blur{filter:blur(6px)}
+.rv button{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:10px;width:42px;height:42px;font-size:16px;flex:none}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <h1 id="title">🎧 Listening 通勤</h1>
+    <button class="fsbtn" id="fsm" aria-label="文字を小さく">A−</button>
+    <button class="fsbtn" id="fsp" aria-label="文字を大きく">A+</button>
+  </div>
+</header>
+<main id="main"></main>
+<audio id="au" preload="auto" playsinline></audio>
+<nav>
+  <button data-tab="play" class="on"><span class="ic">🎧</span>再生</button>
+  <button data-tab="list"><span class="ic">📚</span>一覧</button>
+  <button data-tab="review"><span class="ic">⭐</span>復習</button>
+  <button data-tab="settings"><span class="ic">⚙️</span>設定</button>
+</nav>
+<script>
+/* global TextEncoder, TextDecoder, MediaMetadata */
+'use strict';
+const APP_VERSION = '2026.11.06-0630';
+const STORE_KEY = 'oet-listening-commute-v1';
+const PASS_KEY = 'oet-listening-commute-pass';
+const AUDIO_CACHE = 'oet-lc-audio-v1';
+const SPEEDS = [0.75, 0.85, 1, 1.15];
+const GAPS = [0, 0.5, 1, 1.5];
+
+// ---------- 保存（localStorage は必ずこのラッパ経由） ----------
+const LS = {
+  ok: true,
+  get(k){ try { return localStorage.getItem(k); } catch(e){ this.ok = false; return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); return true; } catch(e){ this.ok = false; return false; } },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} },
+};
+function defaultState(){
+  return { v:1, pos:{}, far:{}, stars:{}, days:{}, last:null,
+    set:{ mode:'step', reps:2, gap:0.5, speed:1, show:'after', fs:18 } };
+}
+function loadState(){
+  const d = defaultState();
+  let s = null;
+  try { s = JSON.parse(LS.get(STORE_KEY) || 'null'); } catch(e){ s = null; }
+  if (!s || typeof s !== 'object') return d;
+  for (const k of ['pos','far','stars','days']) d[k] = (s[k] && typeof s[k] === 'object') ? s[k] : {};
+  d.last = typeof s.last === 'string' ? s.last : null;
+  if (s.set && typeof s.set === 'object') Object.assign(d.set, s.set);
+  if (!['step','repeat','flow'].includes(d.set.mode)) d.set.mode = 'step';
+  if (!['after','always','hide'].includes(d.set.show)) d.set.show = 'after';
+  if (!SPEEDS.includes(d.set.speed)) d.set.speed = 1;
+  if (!GAPS.includes(d.set.gap)) d.set.gap = 0.5;
+  if (![2,3,5].includes(d.set.reps)) d.set.reps = 2;
+  return d;
+}
+let S = loadState();
+let saveWarned = false;
+function save(){
+  if (!LS.set(STORE_KEY, JSON.stringify(S)) && !saveWarned){ saveWarned = true; toast('この端末では記録を保存できません（プライベートブラウズ等）'); }
+}
+
+// ---------- 小物 ----------
+const $ = sel => document.querySelector(sel);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+function todayKey(d = new Date()){
+  const z = new Date(d.getTime() + 9*3600e3); // 日本時間で日付を切る
+  return z.toISOString().slice(0, 10);
+}
+function fmtTime(sec){ sec = Math.max(0, Math.floor(sec)); return Math.floor(sec/60) + ':' + String(sec%60).padStart(2,'0'); }
+function fmtMB(bytes){ return (bytes/1e6).toFixed(bytes < 1e7 ? 1 : 0) + 'MB'; }
+let toastTimer = null;
+function toast(m){
+  let el = $('#toast');
+  if (!el){ el = document.createElement('div'); el.id = 'toast';
+    el.style.cssText = 'position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:20;background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:12px;padding:10px 14px;font-size:13px;text-align:center';
+    document.body.appendChild(el); }
+  el.textContent = m; el.style.display = 'block';
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2600);
+}
+
+// ---------- 教材データ（合言葉で復号） ----------
+const LOCK = { state:'locked', err:'', data:null, key:null };
+let TESTS = [], TRACKS = {};
+async function decryptEnvelope(env, pass){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({name:'PBKDF2', salt:b64(env.salt), iterations:env.iter, hash:'SHA-256'}, base, {name:'AES-GCM', length:256}, false, ['decrypt']);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:b64(env.iv)}, key, b64(env.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+function setData(d){
+  LOCK.data = d; TESTS = d.tests || []; TRACKS = {};
+  for (const t of TESTS) for (const tr of t.tracks){ tr.test = t; TRACKS[tr.id] = tr; }
+}
+let ENV = null;
+async function loadEnvelope(){
+  if (ENV) return ENV;
+  const r = await fetch('data.enc.json', { cache:'no-cache' });
+  if (!r.ok) throw new Error('data ' + r.status);
+  ENV = await r.json();
+  return ENV;
+}
+async function unlock(pass, quiet){
+  if (!pass) return false;
+  try {
+    const env = await loadEnvelope();
+    let d;
+    try { d = await decryptEnvelope(env, pass); }
+    catch(e){ LOCK.err = '合言葉が違います'; if (!quiet) render(); return false; }
+    LOCK.key = await crypto.subtle.importKey('raw', b64(d.k), 'AES-GCM', false, ['decrypt']);
+    setData(d);
+    LOCK.state = 'open'; LOCK.err = '';
+    LS.set(PASS_KEY, pass);
+    if (!quiet) render();
+    return true;
+  } catch(e){
+    LOCK.err = '教材データを読めません（圏外？）: ' + e.message;
+    if (!quiet) render();
+    return false;
+  }
+}
+
+// ---------- 音声の保存（Cache Storage）と復号 ----------
+function audioUrl(tr){ return 'a/' + tr.id + '.bin?v=' + tr.sha; }
+async function cachedIds(){
+  const ids = new Set();
+  try {
+    const c = await caches.open(AUDIO_CACHE);
+    for (const req of await c.keys()){
+      const m = new URL(req.url).pathname.match(/\/a\/([^/]+)\.bin$/);
+      const v = new URL(req.url).searchParams.get('v');
+      if (m && TRACKS[m[1]] && TRACKS[m[1]].sha === v) ids.add(m[1]);
+    }
+  } catch(e){}
+  return ids;
+}
+let SAVED = new Set();
+async function refreshSaved(){ SAVED = await cachedIds(); }
+async function fetchAudio(tr, onProgress){
+  const url = audioUrl(tr);
+  let c = null;
+  try { c = await caches.open(AUDIO_CACHE); } catch(e){}
+  if (c){ const hit = await c.match(url); if (hit) return hit.arrayBuffer(); }
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('音声 ' + r.status);
+  let buf;
+  if (r.body && r.body.getReader && onProgress){
+    const reader = r.body.getReader(); const parts = []; let got = 0;
+    for (;;){ const { done, value } = await reader.read(); if (done) break; parts.push(value); got += value.length; onProgress(got, tr.size); }
+    const all = new Uint8Array(got); let o = 0; for (const p of parts){ all.set(p, o); o += p.length; }
+    buf = all.buffer;
+  } else buf = await r.arrayBuffer();
+  if (c){
+    try {
+      for (const req of await c.keys()) if (new URL(req.url).pathname.endsWith('/a/' + tr.id + '.bin')) await c.delete(req); // 古い版を消す
+      await c.put(url, new Response(buf.slice(0), { headers:{ 'Content-Type':'application/octet-stream' } }));
+      SAVED.add(tr.id);
+    } catch(e){ toast('端末に保存できませんでした（容量不足？）'); }
+  }
+  return buf;
+}
+async function decryptAudio(buf){
+  const u = new Uint8Array(buf);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:u.slice(0, 12)}, LOCK.key, u.slice(12));
+  return new Blob([pt], { type:'audio/mp4' });
+}
+async function saveTracks(list, label){
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch(e){}
+  const todo = list.filter(tr => !SAVED.has(tr.id));
+  const total = todo.reduce((a, t) => a + t.size, 0);
+  let done = 0;
+  DL.busy = true;
+  for (const tr of todo){
+    try {
+      await fetchAudio(tr, (got) => { DL.msg = `${label}: ${fmtMB(done + got)} / ${fmtMB(total)}`; paintDL(); });
+    } catch(e){ DL.busy = false; DL.msg = '保存に失敗: ' + e.message; paintDL(); return; }
+    done += tr.size;
+  }
+  DL.busy = false; DL.msg = `${label}: 保存しました`; paintDL(); render();
+}
+const DL = { busy:false, msg:'' };
+function paintDL(){ const el = $('#dlmsg'); if (el) el.textContent = DL.msg; }
+
+// ---------- 文の位置 ----------
+function sentAt(sents, t){
+  // 時刻 t を含む文（無ければ直前の文）。二分探索
+  let lo = 0, hi = sents.length - 1, ans = 0;
+  while (lo <= hi){ const mid = (lo + hi) >> 1; if (sents[mid][0] <= t + 0.01){ ans = mid; lo = mid + 1; } else hi = mid - 1; }
+  return ans;
+}
+function starKey(trId, sent){ return trId + '@' + Math.round(sent[0] * 10); }
+function findStarSent(tr, key){
+  // 文の区切りを作り直しても、開始時刻が最も近い文に付け直す
+  const t = Number(key.split('@')[1]) / 10;
+  let best = -1, bd = 1e9;
+  tr.sents.forEach((s, i) => { const d = Math.abs(s[0] - t); if (d < bd){ bd = d; best = i; } });
+  return bd <= 3 ? best : -1;
+}
+function isStarred(tr, i){ return !!S.stars[starKey(tr.id, tr.sents[i])]; }
+function toggleStar(tr, i){
+  const k = starKey(tr.id, tr.sents[i]);
+  if (S.stars[k]) delete S.stars[k]; else S.stars[k] = { ts: Date.now(), t: tr.sents[i][2].slice(0, 80) };
+  save();
+}
+function trackProgress(trId){
+  const tr = TRACKS[trId]; if (!tr || !tr.sents.length) return 0;
+  return Math.min(1, ((S.far[trId] ?? -1) + 1) / tr.sents.length);
+}
+
+// ---------- 聞いた時間 ----------
+let lastTick = null;
+function tickListen(){
+  const au = $('#au');
+  if (!au || au.paused){ lastTick = null; return; }
+  const now = Date.now();
+  // 40ミリ秒ごとに足すので、0.1秒単位で丸めると永遠に0のまま（2026-11-06）
+  if (lastTick){ const dt = Math.min(5, (now - lastTick) / 1000); const k = todayKey(); S.days[k] = Math.round(((S.days[k] || 0) + dt) * 1000) / 1000; }
+  lastTick = now;
+}
+function weekSeconds(){
+  let sum = 0; const now = new Date();
+  for (let i = 0; i < 7; i++){ sum += S.days[todayKey(new Date(now.getTime() - i*864e5))] || 0; }
+  return sum;
+}
+
+// ---------- 再生エンジン ----------
+// mode: step=1文ごとに止まる / repeat=各文をN回くり返して自動で次へ / flow=通し
+// 文と文の間（くり返しの間）はミュートのまま再生を続けて時間を稼ぐ。
+// 止めると iPhone の画面ロック中にページが眠り、次の文へ進めなくなるため。
+const P = { tr:null, i:0, url:null, loading:false, stopAt:null, rep:0, gapping:false, gapUntil:0, after:null, heard:new Set(), queue:null, qi:0 };
+let timer = null;
+async function openTrack(trId, i, autoplay){
+  const tr = TRACKS[trId]; if (!tr) return;
+  const au = $('#au');
+  if (P.tr !== tr || !P.url){
+    P.loading = true; P.tr = tr; render();
+    try {
+      const buf = await fetchAudio(tr, (got, size) => { P.loadMsg = `読み込み中 ${Math.round(got/size*100)}%`; const el = $('#loadmsg'); if (el) el.textContent = P.loadMsg; });
+      const blob = await decryptAudio(buf);
+      if (P.url) URL.revokeObjectURL(P.url);
+      P.url = URL.createObjectURL(blob);
+      au.src = P.url;
+      au.load();
+    } catch(e){ P.loading = false; P.tr = null; toast('音声を開けません: ' + e.message); render(); return; }
+    P.loading = false;
+    P.heard = new Set();
+  }
+  S.last = trId; save();
+  P.i = Math.max(0, Math.min(tr.sents.length - 1, i ?? S.pos[trId] ?? 0));
+  P.stopAt = null; P.gapping = false; au.muted = false;
+  setMeta();
+  render();
+  if (autoplay) playSent(P.i);
+}
+function applySpeed(){ const au = $('#au'); au.playbackRate = S.set.speed; au.defaultPlaybackRate = S.set.speed; try { au.preservesPitch = true; au.webkitPreservesPitch = true; } catch(e){} }
+function playSent(i, keepRep){
+  const tr = P.tr; if (!tr) return;
+  const au = $('#au');
+  P.i = Math.max(0, Math.min(tr.sents.length - 1, i));
+  if (!keepRep) P.rep = 0;
+  P.gapping = false; au.muted = false;
+  const [s, e] = tr.sents[P.i];
+  P.stopAt = S.set.mode === 'flow' ? null : e;
+  applySpeed();
+  au.currentTime = s;
+  const pr = au.play(); if (pr && pr.catch) pr.catch(() => {});
+  markHeard(P.i);
+  startTimer();
+  paintPlayer();
+}
+function markHeard(i){
+  P.heard.add(i);
+  S.pos[P.tr.id] = i;
+  if ((S.far[P.tr.id] ?? -1) < i) S.far[P.tr.id] = i;
+  save();
+}
+function startTimer(){ if (!timer) timer = setInterval(onTick, 40); }
+function onTick(){
+  const au = $('#au'); const tr = P.tr;
+  tickListen();
+  if (!tr || au.paused) return;
+  const t = au.currentTime;
+  if (P.gapping){
+    if (t >= P.gapUntil){ P.gapping = false; au.muted = false; const f = P.after; P.after = null; f && f(); }
+    return;
+  }
+  if (S.set.mode === 'flow'){
+    const k = sentAt(tr.sents, t);
+    if (k !== P.i){ P.i = k; markHeard(k); paintPlayer(); }
+    return;
+  }
+  if (P.stopAt != null && t >= P.stopAt) onSentEnd();
+}
+function onSentEnd(){
+  const au = $('#au'); const tr = P.tr; const [s, e] = tr.sents[P.i];
+  P.stopAt = null;
+  if (S.set.mode === 'step'){ au.pause(); paintPlayer(); return; }
+  // repeat
+  P.rep++;
+  const gap = Math.max(0.6, (e - s) * S.set.gap / S.set.speed);
+  const next = P.rep < S.set.reps ? () => playSent(P.i, true)
+    : (P.queue ? () => nextInQueue() : (P.i + 1 < tr.sents.length ? () => playSent(P.i + 1) : () => { au.pause(); paintPlayer(); }));
+  if (P.rep >= S.set.reps && !P.queue && P.i + 1 >= tr.sents.length){ au.pause(); toast('最後の文まで聞きました'); paintPlayer(); return; }
+  startGap(gap, next);
+  paintPlayer();
+}
+function startGap(sec, after){
+  const au = $('#au');
+  P.gapping = true; P.after = after;
+  au.muted = true;
+  P.gapUntil = au.currentTime + sec * au.playbackRate;
+}
+function onEnded(){
+  // 間（ミュート再生）の途中でファイルの終わりに着いた場合
+  if (P.gapping){ P.gapping = false; $('#au').muted = false; const f = P.after; P.after = null; f && f(); return; }
+  paintPlayer();
+}
+function togglePlay(){
+  const au = $('#au');
+  if (!P.tr){ if (S.last && TRACKS[S.last]) openTrack(S.last, null, true); return; }
+  if (au.paused){
+    if (S.set.mode === 'flow'){ applySpeed(); au.muted = false; P.gapping = false; const pr = au.play(); if (pr && pr.catch) pr.catch(() => {}); startTimer(); paintPlayer(); }
+    else playSent(P.i);
+  } else { au.pause(); P.gapping = false; au.muted = false; paintPlayer(); }
+}
+function again(){ if (P.tr) playSent(P.i); }
+function next(){ if (!P.tr) return; if (P.queue) return nextInQueue(); if (P.i + 1 < P.tr.sents.length) playSent(P.i + 1); else toast('最後の文です'); }
+function prev(){ if (!P.tr) return; if (P.queue) return prevInQueue(); playSent(Math.max(0, P.i - 1)); }
+function exitQueue(){ P.queue = null; P.qi = 0; }
+
+// ⭐ の文を順に再生
+function starList(){
+  const out = [];
+  for (const [k, v] of Object.entries(S.stars)){
+    const id = k.split('@')[0]; const tr = TRACKS[id]; if (!tr) continue;
+    const i = findStarSent(tr, k); if (i < 0) continue;
+    out.push({ k, id, i, ts: v.ts || 0 });
+  }
+  const order = Object.keys(TRACKS);
+  out.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id) || a.i - b.i);
+  return out;
+}
+async function playQueue(qi){
+  const list = starList(); if (!list.length) return;
+  P.queue = list; P.qi = Math.max(0, Math.min(list.length - 1, qi || 0));
+  const it = list[P.qi];
+  if (P.tr && P.tr.id === it.id) playSent(it.i); else await openTrack(it.id, it.i, true);
+  showTab('play');
+}
+function nextInQueue(){ if (P.qi + 1 < P.queue.length) playQueue(P.qi + 1); else { $('#au').pause(); toast('⭐ の文を最後まで聞きました'); exitQueue(); paintPlayer(); } }
+function prevInQueue(){ playQueue(Math.max(0, P.qi - 1)); }
+
+function setMeta(){
+  if (!('mediaSession' in navigator) || !P.tr) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: `${P.tr.test.title} ${P.tr.label}`, artist: 'OET Listening 通勤', artwork: [{ src:'icon-512.png', sizes:'512x512', type:'image/png' }] });
+    const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch(e){} };
+    h('play', () => togglePlay());
+    h('pause', () => togglePlay());
+    h('previoustrack', () => again());     // イヤホン・ロック画面の「戻る」= もう1回
+    h('nexttrack', () => next());          // 「次へ」= 次の文
+    h('seekbackward', () => prev());
+    h('seekforward', () => next());
+  } catch(e){}
+}
+
+// ---------- 画面 ----------
+let TAB = 'play';
+function showTab(t){ TAB = t; for (const b of document.querySelectorAll('nav button')) b.classList.toggle('on', b.dataset.tab === t); render(); window.scrollTo(0, 0); }
+function render(){
+  document.documentElement.style.setProperty('--fs', S.set.fs + 'px');
+  const m = $('#main'); if (!m) return;
+  if (LOCK.state !== 'open' && TAB !== 'settings') { m.innerHTML = lockedView(); bindLocked(); return; }
+  if (TAB === 'play') m.innerHTML = playView();
+  else if (TAB === 'list') m.innerHTML = listView();
+  else if (TAB === 'review') m.innerHTML = reviewView();
+  else m.innerHTML = settingsView();
+  bind();
+}
+function lockedView(){
+  return `<div class="card"><h2>🔒 合言葉を入れてください</h2>
+    <p class="muted">音源とスクリプトは市販・公式教材なので暗号化しています。Reading通勤ドリルと同じ合言葉です。一度開けばこの端末に保存され、次からは自動で開きます。</p>
+    ${LOCK.err ? `<div class="msg err">${esc(LOCK.err)}</div>` : ''}
+    <input id="pass" type="password" autocomplete="current-password" placeholder="合言葉">
+    <button class="bigbtn" id="unlock">開く</button></div>
+    <p class="tiny" style="text-align:center">v${APP_VERSION}</p>`;
+}
+function bindLocked(){
+  const go = () => { const v = $('#pass').value.trim(); if (v) unlock(v, false); };
+  if ($('#unlock')) $('#unlock').onclick = go;
+  if ($('#pass')) $('#pass').onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+function segBtns(name, items, cur){
+  return `<div class="seg" data-seg="${name}">${items.map(([v, l]) => `<button data-v="${v}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+function revealed(i){ return S.set.show === 'always' || (S.set.show === 'after' && P.heard.has(i)); }
+function playView(){
+  const tr = P.tr;
+  const today = Math.round((S.days[todayKey()] || 0) / 60), week = Math.round(weekSeconds() / 60);
+  const statsCard = `<div class="stats" style="margin-bottom:12px"><div class="stat"><b>${today}</b><span>今日（分）</span></div><div class="stat"><b>${week}</b><span>7日間（分）</span></div><div class="stat"><b>${Object.keys(S.stars).length}</b><span>⭐ 聞き返す文</span></div></div>`;
+  if (!tr){
+    const last = S.last && TRACKS[S.last];
+    return statsCard + `<div class="card"><h2>${last ? '続きから聞く' : 'はじめに'}</h2>
+      ${last ? `<p class="muted">${esc(last.test.title)} ${esc(last.label)} の ${(S.pos[last.id] ?? 0) + 1}文目から</p><button class="bigbtn" id="resume">▶ 続きを再生</button>` : '<p class="muted">「一覧」からテストとパートを選んでください。</p>'}
+      <button class="bigbtn ghost" data-go="list">📚 一覧から選ぶ</button></div>` + helpCard();
+  }
+  if (P.loading) return `<div class="card"><p class="muted" id="loadmsg">読み込み中…</p></div>`;
+  const qinfo = P.queue ? `<div class="msg">⭐ 復習モード ${P.qi + 1}/${P.queue.length} <button class="dl" id="qexit" style="float:right">やめる</button></div>` : '';
+  return statsCard + qinfo + `
+  <div class="card">
+    <div class="now"><span class="pill ${tr.part}">${tr.part || '全'}</span><b>${esc(tr.test.title)} ${esc(tr.label)}</b><span class="tiny" id="pos">${P.i + 1}/${tr.sents.length}</span></div>
+    <div class="prog"><i id="progbar" style="width:${((P.i + 1) / tr.sents.length * 100).toFixed(1)}%"></i></div>
+    <div class="sent" id="sentbox">${sentInner(tr, P.i)}</div>
+  </div>
+  <div class="ctrl">
+    <button id="bprev">⏮<small>前の文</small></button>
+    <button id="bagain">🔁<small>もう1回</small></button>
+    <button id="bplay" class="play">${$('#au').paused ? '▶' : '⏸'}<small>${$('#au').paused ? '再生' : '止める'}</small></button>
+    <button id="bnext">⏭<small>次の文</small></button>
+  </div>
+  <div class="card">
+    <div class="optrow"><span>聞き方</span>${segBtns('mode', [['step','1文ずつ'],['repeat','くり返し'],['flow','通し']], S.set.mode)}</div>
+    <div class="optrow ${S.set.mode === 'repeat' ? '' : 'hide'}"><span>回数</span>${segBtns('reps', [[2,'2回'],[3,'3回'],[5,'5回']], S.set.reps)}</div>
+    <div class="optrow ${S.set.mode === 'repeat' ? '' : 'hide'}"><span>文の間</span>${segBtns('gap', [[0,'なし'],[0.5,'×0.5'],[1,'×1'],[1.5,'×1.5']], S.set.gap)}</div>
+    <div class="optrow"><span>速さ</span>${segBtns('speed', SPEEDS.map(v => [v, v + '×']), S.set.speed)}</div>
+    <div class="optrow"><span>英文</span>${segBtns('show', [['hide','隠す'],['after','聞いた後'],['always','常に']], S.set.show)}</div>
+  </div>
+  <details class="card" id="scriptbox" ${UI.script ? 'open' : ''}><summary class="muted">スクリプト全体（${tr.sents.length}文）</summary>
+    <div class="script" id="script" style="margin-top:8px">${scriptHtml(tr)}</div></details>
+  <p class="tiny">スクリプトは自動の文字起こし（Whisper）です。綴りや区切りに誤りがあることがあります。</p>`;
+}
+const UI = { script:false };
+function sentInner(tr, i){
+  const s = tr.sents[i]; if (!s) return '';
+  const st = isStarred(tr, i);
+  const show = revealed(i) || UI.peek === i;
+  const body = show ? `<div class="txt">${esc(s[2])}</div>`
+    : `<div class="hid">${S.set.show === 'hide' ? '英文は隠しています（タップで表示）' : '聞いたら表示されます（タップで先に見る）'}</div>`;
+  return `<span class="no">${fmtTime(s[0])}</span><button class="starbtn ${st ? 'on' : ''}" id="bstar" aria-label="聞き返す文に追加">${st ? '★' : '☆'}</button>${body}`;
+}
+function scriptHtml(tr){
+  return tr.sents.map((s, i) => {
+    const open = S.set.show === 'always' || (S.far[tr.id] ?? -1) >= i || P.heard.has(i);
+    return `<p data-i="${i}" class="${i === P.i ? 'cur' : ''} ${open ? '' : 'locked'}"><span class="tm">${fmtTime(s[0])}</span><span class="t">${open ? esc(s[2]) : '（まだ聞いていない文）'}${isStarred(tr, i) ? ' <span class="st">★</span>' : ''}</span></p>`;
+  }).join('');
+}
+function paintPlayer(){
+  if (TAB !== 'play' || !P.tr || P.loading){ return; }
+  const tr = P.tr; const au = $('#au');
+  const box = $('#sentbox'); if (!box){ render(); return; }
+  box.innerHTML = sentInner(tr, P.i); bindSent();
+  const pos = $('#pos'); if (pos) pos.textContent = `${P.i + 1}/${tr.sents.length}`;
+  const bar = $('#progbar'); if (bar) bar.style.width = ((P.i + 1) / tr.sents.length * 100).toFixed(1) + '%';
+  const bp = $('#bplay'); if (bp) bp.innerHTML = au.paused ? '▶<small>再生</small>' : '⏸<small>止める</small>';
+  const sc = $('#script');
+  if (sc && UI.script){
+    const curP = sc.querySelector('p.cur'); if (curP) curP.classList.remove('cur');
+    const p = sc.querySelector(`p[data-i="${P.i}"]`);
+    if (p){ p.classList.add('cur'); if (p.classList.contains('locked')){ p.classList.remove('locked'); p.querySelector('.t').textContent = tr.sents[P.i][2]; } }
+  }
+}
+function bindSent(){
+  const bs = $('#bstar'); if (bs) bs.onclick = e => { e.stopPropagation(); toggleStar(P.tr, P.i); paintPlayer(); };
+  const box = $('#sentbox'); if (box) box.onclick = () => { UI.peek = UI.peek === P.i ? null : P.i; if (revealed(P.i)) UI.peek = null; paintPlayer(); };
+}
+function helpCard(){
+  return `<div class="card"><h2>使い方</h2><ul class="muted" style="margin:0;padding-left:18px">
+    <li><b>1文ずつ</b>：1文流れて止まる。🔁もう1回／⏭次の文。</li>
+    <li><b>くり返し</b>：各文を2〜5回流して自動で次へ。手がふさがっている時に。文の間は文の長さ×0.5〜1.5の無音（頭の中でシャドーイング）。</li>
+    <li><b>通し</b>：本番どおり止めずに流し、今の文を表示。</li>
+    <li>聞き取れなかった文は ☆ を押すと「復習」タブにたまります。</li>
+    <li>イヤホン・ロック画面の ⏮ は「もう1回」、⏭ は「次の文」です。</li>
+    <li>一度再生したパートは端末に保存され、圏外でも聞けます。地下鉄の前に「一覧」で保存しておくと安心です。</li></ul></div>`;
+}
+function listView(){
+  const groups = [];
+  for (const t of TESTS){ let g = groups.find(x => x.name === t.group); if (!g){ g = { name:t.group, tests:[] }; groups.push(g); } g.tests.push(t); }
+  const allSize = Object.values(TRACKS).reduce((a, t) => a + t.size, 0);
+  const savedSize = Object.values(TRACKS).filter(t => SAVED.has(t.id)).reduce((a, t) => a + t.size, 0);
+  return `<div class="card"><div class="thead"><b>端末に保存（圏外用）</b><span class="tiny">${fmtMB(savedSize)} / ${fmtMB(allSize)}</span></div>
+      <p class="tiny" id="dlmsg">${esc(DL.msg)}</p>
+      <button class="bigbtn ghost" id="saveall" ${DL.busy ? 'disabled' : ''}>⬇ 全部保存する</button></div>` +
+    groups.map(g => `<h3>${esc(g.name)}</h3>` + g.tests.map(t => {
+      const allSaved = t.tracks.every(tr => SAVED.has(tr.id));
+      const size = t.tracks.reduce((a, x) => a + x.size, 0);
+      return `<div class="card test"><div class="thead"><b>${esc(t.title)}</b>
+        <button class="dl" data-save="${t.id}" ${allSaved || DL.busy ? 'disabled' : ''}>${allSaved ? '✓ 保存済み' : '⬇ ' + fmtMB(size)}</button></div>
+        <div class="tracks">${t.tracks.map(tr => {
+          const pr = trackProgress(tr.id);
+          return `<button class="tr ${P.tr === tr ? 'cur' : ''}" data-open="${tr.id}">${esc(tr.label)}${SAVED.has(tr.id) ? ' <span class="tiny">✓</span>' : ''}<small>${fmtTime(tr.dur)} · ${Math.round(pr * 100)}%</small><span class="bar" style="width:${(pr * 100).toFixed(0)}%"></span></button>`;
+        }).join('')}</div></div>`;
+    }).join('')).join('');
+}
+function reviewView(){
+  const list = starList();
+  if (!list.length) return `<div class="card"><h2>⭐ 聞き返す文</h2><p class="muted">再生中に ☆ を押した文がここにたまります。</p></div>`;
+  const byTr = {};
+  for (const it of list) (byTr[it.id] = byTr[it.id] || []).push(it);
+  return `<div class="card"><h2>⭐ 聞き返す文（${list.length}）</h2>
+      <p class="muted">英文はタップで表示。▶ でその文から、下のボタンで ⭐ を順に再生します（今の「聞き方」の設定で）。</p>
+      <button class="bigbtn" id="qplay">▶ ⭐ を順に再生</button></div>` +
+    Object.entries(byTr).map(([id, its]) => {
+      const tr = TRACKS[id];
+      return `<div class="card"><div class="thead" style="margin-bottom:4px"><span class="pill ${tr.part}">${tr.part || '全'}</span><b>${esc(tr.test.title)} ${esc(tr.label)}</b></div>` +
+        its.map(it => `<div class="rv"><button data-q="${list.indexOf(it)}" aria-label="再生">▶</button><span class="t ${S.set.show === 'always' ? '' : 'blur'}" data-reveal>${esc(tr.sents[it.i][2])}</span><button data-unstar="${esc(it.k)}" aria-label="外す">✕</button></div>`).join('') + `</div>`;
+    }).join('');
+}
+function settingsView(){
+  const n = Object.keys(TRACKS).length;
+  return `<div class="card"><h2>🔒 教材</h2>
+      ${LOCK.state === 'open' ? `<p class="muted">開いています（${TESTS.length}テスト・${n}トラック）。</p><button class="bigbtn ghost" id="lock">この端末の合言葉を消す</button>`
+        : `${LOCK.err ? `<div class="msg err">${esc(LOCK.err)}</div>` : ''}<input id="pass" type="password" autocomplete="current-password" placeholder="合言葉"><button class="bigbtn" id="unlock">開く</button>`}
+    </div>
+    <div class="card"><h2>💾 端末に保存した音声</h2>
+      <p class="muted">${SAVED.size}トラック保存済み。保存は「一覧」から。</p>
+      <button class="bigbtn ghost" id="clearaudio">保存した音声を全部消す</button></div>
+    <div class="card"><h2>📤 記録の書き出し・取り込み</h2>
+      <p class="muted">⭐・どこまで聞いたか・聞いた時間（音声は含みません）。機種変更や別の端末へ移すときに。</p>
+      <button class="bigbtn ghost" id="exp">書き出す（JSON）</button>
+      <button class="bigbtn ghost" id="imp">取り込む（JSON）</button>
+      <input type="file" id="impf" accept="application/json,.json" class="hide"></div>
+    <p class="tiny" style="text-align:center">v${APP_VERSION}${LS.ok ? '' : ' · ⚠️ 記録を保存できません'}</p>`;
+}
+function bind(){
+  for (const b of document.querySelectorAll('[data-go]')) b.onclick = () => showTab(b.dataset.go);
+  if ($('#resume')) $('#resume').onclick = () => openTrack(S.last, null, true);
+  if ($('#bplay')) $('#bplay').onclick = togglePlay;
+  if ($('#bagain')) $('#bagain').onclick = again;
+  if ($('#bnext')) $('#bnext').onclick = next;
+  if ($('#bprev')) $('#bprev').onclick = prev;
+  if ($('#qexit')) $('#qexit').onclick = () => { exitQueue(); render(); };
+  bindSent();
+  for (const seg of document.querySelectorAll('[data-seg]')){
+    for (const b of seg.querySelectorAll('button')) b.onclick = () => {
+      const k = seg.dataset.seg; const raw = b.dataset.v;
+      S.set[k] = ['reps','gap','speed'].includes(k) ? Number(raw) : raw;
+      save();
+      if (k === 'speed') applySpeed();
+      if (k === 'mode'){ P.gapping = false; $('#au').muted = false; P.stopAt = (raw === 'flow' || !P.tr) ? null : P.tr.sents[P.i][1]; }
+      render();
+    };
+  }
+  const sb = $('#scriptbox'); if (sb) sb.ontoggle = () => { UI.script = sb.open; if (sb.open){ const p = sb.querySelector('p.cur'); if (p) p.scrollIntoView({ block:'center' }); } };
+  const sc = $('#script'); if (sc) sc.onclick = e => { const p = e.target.closest('p[data-i]'); if (p) playSent(Number(p.dataset.i)); };
+  for (const b of document.querySelectorAll('[data-open]')) b.onclick = () => { exitQueue(); showTab('play'); openTrack(b.dataset.open, null, false); };
+  for (const b of document.querySelectorAll('[data-save]')) b.onclick = () => { const t = TESTS.find(x => x.id === b.dataset.save); saveTracks(t.tracks, t.title); render(); };
+  if ($('#saveall')) $('#saveall').onclick = () => { saveTracks(Object.values(TRACKS), '全部'); render(); };
+  if ($('#qplay')) $('#qplay').onclick = () => playQueue(0);
+  for (const b of document.querySelectorAll('[data-q]')) b.onclick = () => playQueue(Number(b.dataset.q));
+  for (const b of document.querySelectorAll('[data-unstar]')) b.onclick = () => { delete S.stars[b.dataset.unstar]; save(); render(); };
+  for (const el of document.querySelectorAll('[data-reveal]')) el.onclick = () => el.classList.toggle('blur');
+  if ($('#unlock')) { const go = () => { const v = $('#pass').value.trim(); if (v) unlock(v, false); }; $('#unlock').onclick = go; }
+  if ($('#lock')) $('#lock').onclick = () => { if (confirm('この端末に保存した合言葉を消しますか？（記録は消えません）')){ LS.del(PASS_KEY); location.reload(); } };
+  if ($('#clearaudio')) $('#clearaudio').onclick = async () => { if (!confirm('保存した音声を全部消しますか？（⭐や記録は残ります）')) return; try { await caches.delete(AUDIO_CACHE); } catch(e){} SAVED = new Set(); render(); };
+  if ($('#exp')) $('#exp').onclick = exportJson;
+  if ($('#imp')) $('#imp').onclick = () => $('#impf').click();
+  if ($('#impf')) $('#impf').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const res = importJson(String(r.result)); toast(res.ok ? `取り込みました（⭐${res.stars}）` : '取り込めません: ' + res.err); render(); }; r.readAsText(f); };
+}
+
+// ---------- 書き出し・取り込み ----------
+function exportJson(){
+  const blob = new Blob([JSON.stringify({ app:'oet-listening-commute', exported:new Date().toISOString(), state:S }, null, 1)], { type:'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `oet-listening-commute-${todayKey()}.json`; a.click();
+}
+function mergeState(cur, inc){
+  // 取り込みは上書きでなく合わせる：⭐は両方、到達位置は遠い方、聞いた時間は日ごとに多い方
+  const out = JSON.parse(JSON.stringify(cur));
+  for (const [k, v] of Object.entries(inc.stars || {})) if (!out.stars[k]) out.stars[k] = v;
+  for (const [k, v] of Object.entries(inc.far || {})) if (typeof v === 'number' && (out.far[k] ?? -1) < v) out.far[k] = v;
+  for (const [k, v] of Object.entries(inc.pos || {})) if (typeof v === 'number' && out.pos[k] == null) out.pos[k] = v;
+  for (const [k, v] of Object.entries(inc.days || {})) if (typeof v === 'number' && (out.days[k] || 0) < v) out.days[k] = v;
+  return out;
+}
+function importJson(text){
+  let d; try { d = JSON.parse(text); } catch(e){ return { ok:false, err:'JSONではありません' }; }
+  const inc = d && d.state; if (!inc || typeof inc !== 'object' || !inc.stars) return { ok:false, err:'このアプリの書き出しではありません' };
+  S = mergeState(S, inc); save();
+  return { ok:true, stars:Object.keys(S.stars).length };
+}
+
+// ---------- 起動 ----------
+function init(){
+  for (const b of document.querySelectorAll('nav button')) b.onclick = () => showTab(b.dataset.tab);
+  $('#fsm').onclick = () => { S.set.fs = Math.max(14, S.set.fs - 1); save(); render(); };
+  $('#fsp').onclick = () => { S.set.fs = Math.min(26, S.set.fs + 1); save(); render(); };
+  const au = $('#au');
+  au.addEventListener('ended', onEnded);
+  au.addEventListener('pause', () => { tickListen(); save(); paintPlayer(); });
+  au.addEventListener('play', () => { lastTick = Date.now(); startTimer(); });
+  render();
+  const pass = LS.get(PASS_KEY);
+  if (pass) unlock(pass, true).then(ok => { if (ok) refreshSaved().then(render); else render(); });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+init();
+</script>
+</body>
+</html>
