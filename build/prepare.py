@@ -26,6 +26,48 @@ def compress(src, dst):
     tmp.rename(dst)
 
 
+QUIET_DB = -26    # これより小さい音源は持ち上げる（Test 15 は -34〜-38dB で、無音フィルターが声ごと消していた）
+TARGET_DB = -20
+MIN_WPM = 60      # 1分あたりの語数がこれ未満なら取りこぼしとみなし、無音フィルターなしでやり直す（普通は96〜156）
+
+
+def _db(x):
+    import numpy as np
+    return float(20 * np.log10(np.sqrt(np.mean(x ** 2)) + 1e-9))
+
+
+def hallucinated(s):
+    """無音フィルターなしの時、黙読時間などに出る幻の文字（No, no, no… など）を見分ける。"""
+    ws = [w.word.strip(' .,!?').lower() for w in (s.words or [])]
+    if s.compression_ratio > 2.4:
+        return True
+    if len(ws) >= 4 and max(ws.count(w) for w in set(ws)) / len(ws) > 0.5:
+        return True
+    return s.no_speech_prob > 0.6 and s.avg_logprob < -0.5
+
+
+def transcribe(model, m4a):
+    """返り値: (words, 長さ秒, ログ用の注記)"""
+    import numpy as np
+    from faster_whisper.audio import decode_audio
+    a = decode_audio(str(m4a))
+    dur = len(a) / 16000
+    note = ''
+    level = _db(a)
+    if level < QUIET_DB:
+        a = np.clip(a * 10 ** ((TARGET_DB - level) / 20), -1, 1).astype(np.float32)
+        note += f'（音量{level:.0f}dB→持ち上げ）'
+    opts = dict(language='en', word_timestamps=True, beam_size=5, condition_on_previous_text=False)
+    segs = list(model.transcribe(a, vad_filter=True, **opts)[0])
+    if sum(len(s.words or []) for s in segs) < MIN_WPM * dur / 60:
+        segs = [s for s in model.transcribe(a, vad_filter=False, **opts)[0] if not hallucinated(s)]
+        note += '（無音フィルターなしでやり直し）'
+    words = [[round(w.start, 2), round(w.end, 2), w.word] for s in segs for w in (s.words or [])]
+    if len(words) < MIN_WPM * dur / 60:
+        note += ' ⚠️語数が少ない'
+    return words, dur, note
+
+
 def main(only):
     (CACHE / 'm4a').mkdir(parents=True, exist_ok=True)
     (PRIVATE / 'transcripts').mkdir(parents=True, exist_ok=True)
@@ -44,14 +86,12 @@ def main(only):
             from faster_whisper import WhisperModel
             model = WhisperModel(MODEL, device='cpu', compute_type='int8', cpu_threads=os.cpu_count())
         t0 = time.time()
-        segs, info = model.transcribe(str(m4a), language='en', word_timestamps=True, vad_filter=True,
-                                      beam_size=5, condition_on_previous_text=False)
-        words = [[round(w.start, 2), round(w.end, 2), w.word] for s in segs for w in s.words]
-        data = {'id': tr['id'], 'model': MODEL, 'dur': round(info.duration, 2), 'words': words}
+        words, dur, note = transcribe(model, m4a)
+        data = {'id': tr['id'], 'model': MODEL, 'dur': round(dur, 2), 'words': words}
         tmp = out.with_suffix('.tmp')
         tmp.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
         tmp.rename(out)
-        print(f"[{i}/{len(tracks)}] {tr['id']} {info.duration/60:.1f}分 → {time.time()-t0:.0f}秒, {len(words)}語", flush=True)
+        print(f"[{i}/{len(tracks)}] {tr['id']} {dur/60:.1f}分 → {time.time()-t0:.0f}秒, {len(words)}語{note}", flush=True)
     print('done', flush=True)
 
 

@@ -31,6 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CONF = Path.home() / '.config/oet-listening-commute'
 PASS_FILES = [os.environ.get('OET_PASS_FILE'), CONF / 'passphrase', Path.home() / '.config/oet-reading-commute/passphrase']
 PARTIAL = '--partial' in sys.argv
+MIN_WPM = 60  # 普通のトラックは 96〜156語/分
 ITERATIONS = 200_000  # Reading通勤ドリル・デイリーホームと同じ（PBKDF2-SHA256 → AES-GCM 256bit）
 
 
@@ -78,7 +79,7 @@ def encrypt_json(obj, pw):
 def main():
     key, pw = audio_key(), passphrase()
     (ROOT / 'a').mkdir(exist_ok=True)
-    tests, missing = [], []
+    tests, missing, thin = [], [], []
     for t in scan():
         tracks = []
         for tr in t['tracks']:
@@ -96,10 +97,16 @@ def main():
             sents = segment(d['words'], d.get('dur'))
             if not sents:
                 raise SystemExit(f"{tr['id']}: 文が0件")
+            wpm = len(d['words']) / (d['dur'] / 60)
+            if wpm < MIN_WPM:  # 文字起こしの取りこぼし（Test 15 は音量が小さく 0〜22語/分だった）
+                thin.append(f"{tr['id']}({wpm:.0f}語/分)")
             tracks.append({'id': tr['id'], 'label': tr['label'], 'part': tr['part'], 'dur': round(d['dur'], 1),
                            'size': len(enc), 'sha': hashlib.sha256(enc).hexdigest()[:10], 'sents': sents})
         if tracks:
             tests.append({'id': t['id'], 'title': t['title'], 'group': t['group'], 'tracks': tracks})
+    if thin:
+        raise SystemExit(f'文字起こしの語数が少なすぎるトラックがあります: {" ".join(thin)}。'
+                         'prepare.py <id> で作り直してから公開する')
     if missing and not PARTIAL:
         raise SystemExit(f'音声か文字起こしが無いトラックが{len(missing)}件あります（{" ".join(missing[:8])}…）。'
                          '途中のまま公開するなら --partial を付ける')
