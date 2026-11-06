@@ -33,3 +33,24 @@ test('前後に少し余白を付けるが、隣の文の語には食い込ま�
   assert.ok(out[1][1] <= 10);
   for (let i = 1; i < out.length; i++) assert.ok(out[i][0] >= out[i - 1][0]);
 });
+
+function instr(texts) {
+  const code = `import sys,json; sys.path.insert(0, ${JSON.stringify(BUILD)}); from segment import is_instruction; print(json.dumps([is_instruction(t) for t in json.loads(sys.stdin.read())]))`;
+  const r = spawnSync('python3', ['-c', code], { input: JSON.stringify(texts), encoding: 'utf8' });
+  if (r.status !== 0) throw new Error(r.stderr);
+  return JSON.parse(r.stdout);
+}
+
+test('試験の指示文は除き、本文は残す', () => {
+  const drop = ['Now read the question.', 'Now, read the question.', 'Question 3. Now read the question.', 'Extract 1, questions 1 to 12.',
+    'Extract two. Questions thirteen to twenty-four.', 'You now have 90 seconds to read questions 1 to 6.', 'You now have 30 seconds to look at the notes.',
+    'For questions 1 to 12, complete the notes with a word or short phrase.', 'For questions 25-30, choose the answer A, B or C, which fits best according to what you hear.',
+    'Complete your answers as you listen.', 'That is the end of part A. Now look at part B.', 'That is the end of the listening test.',
+    'Part C. In this part of the test, you\'ll hear two different extracts.', 'In each extract, a health professional is talking to a patient.',
+    'At the start of each extract, you\'ll hear this sound.', 'Now turn over and look at the notes for Extract 2.'];
+  const keep = ['That\'s a good question.', 'Do you have any other questions for me?', 'Sure, I can look at that for you.', 'And look at my ankles.',
+    'People typically use either 2 or 3 seconds, which is still fairly quick.', 'You hear a nurse briefing a colleague at the end of her shift.',
+    'Question 3. You hear a doctor advising a patient about a change in medication.', 'kidney problems. Now, read the question.', 'And that\'s actually the end of the procedure.'];
+  assert.deepEqual(instr(drop), drop.map(() => true), '指示文');
+  assert.deepEqual(instr(keep), keep.map(() => false), '本文');
+});

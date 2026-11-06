@@ -137,3 +137,15 @@ test('文の間「なし」はほぼ間を空けない（0.6秒の下限を当�
   assert.ok(Math.abs(app.$('P.gapUntil') - 3.15) < 0.01, String(app.$('P.gapUntil')));
   assert.equal(typeof au.muted, 'boolean');
 });
+
+test('通し：文の間が3秒以上あく所（指示文・黙読時間）は飛ばす。普通の間は飛ばさない', () => {
+  const { app, au, tick } = setup('flow');
+  app.$(`TRACKS.t3a.sents = [[1, 3, 'one.'], [4, 6, 'two.'], [40, 42, 'three.']]`);
+  app.$('playSent(0)');
+  tick(3.5);                      // 1秒の間：飛ばさない
+  assert.equal(au.currentTime, 3.5);
+  tick(6.5);                      // 34秒の間 → 次の文の頭へ
+  assert.equal(au.currentTime, 40);
+  tick(40.2);
+  assert.equal(app.$('P.i'), 2);
+});

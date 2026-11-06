@@ -125,7 +125,8 @@ input[type=password],input[type=text]{width:100%;padding:10px;border-radius:10px
 <script>
 /* global TextEncoder, TextDecoder, MediaMetadata */
 'use strict';
-const APP_VERSION = '2026.11.06-1037';
+const APP_VERSION = '2026.11.06-1803';
+const FLOW_SKIP = 3; // 通し：文の間がこの秒数以上あけば飛ばす
 const STORE_KEY = 'oet-listening-commute-v1';
 const PASS_KEY = 'oet-listening-commute-pass';
 const AUDIO_CACHE = 'oet-lc-audio-v1';
@@ -391,6 +392,9 @@ function onTick(){
   }
   if (S.set.mode === 'flow'){
     const k = sentAt(tr.sents, t);
+    // 文と文の間が3秒以上あく所（試験の指示文・黙読時間の無音）は飛ばして次の文へ
+    const cur = tr.sents[k], nx = tr.sents[k + 1];
+    if (nx && t > cur[1] + 0.2 && nx[0] - cur[1] > FLOW_SKIP && t < nx[0] - 0.5){ au.currentTime = nx[0]; return; }
     if (k !== P.i){ P.i = k; markHeard(k); paintPlayer(); }
     return;
   }
@@ -573,7 +577,7 @@ function helpCard(){
   return `<div class="card"><h2>使い方</h2><ul class="muted" style="margin:0;padding-left:18px">
     <li><b>1文ずつ</b>：1文流れて止まる。🔁もう1回／⏭次の文。</li>
     <li><b>くり返し</b>：各文を2〜5回流して自動で次へ。手がふさがっている時に。文の間は文の長さ×0.5〜1.5の無音（頭の中でシャドーイング）。</li>
-    <li><b>通し</b>：本番どおり止めずに流し、今の文を表示。</li>
+    <li><b>通し</b>：止めずに流し、今の文を表示。試験の指示文と黙読時間の無音は飛ばす。</li>
     <li>聞き取れなかった文は ☆ を押すと「復習」タブにたまります。</li>
     <li>イヤホン・ロック画面の ⏮ は「もう1回」、⏭ は「次の文」です。</li>
     <li>一度再生したパートは端末に保存され、圏外でも聞けます。地下鉄の前に「一覧」で保存しておくと安心です。</li></ul></div>`;

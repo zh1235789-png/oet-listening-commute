@@ -25,7 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
 from catalog import CACHE, PRIVATE, scan  # noqa: E402
-from segment import segment  # noqa: E402
+from segment import drop_instructions, segment  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CONF = Path.home() / '.config/oet-listening-commute'
@@ -94,7 +94,7 @@ def main():
             if not out.exists() or out.read_bytes() != enc:
                 out.write_bytes(enc)
             d = json.loads(tj.read_text(encoding='utf-8'))
-            sents = segment(d['words'], d.get('dur'))
+            sents = drop_instructions(segment(d['words'], d.get('dur')))  # 試験の指示文は除く
             if not sents:
                 raise SystemExit(f"{tr['id']}: 文が0件")
             wpm = len(d['words']) / (d['dur'] / 60)
