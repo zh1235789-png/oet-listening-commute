@@ -29,7 +29,7 @@ test('設定値がおかしくても既定値に戻して起動する', () => {
   assert.equal(app.$('S.set.speed'), 1);
   assert.equal(app.$('S.set.gap'), 0.5);
   assert.equal(app.$('S.set.reps'), 2);
-  assert.equal(app.$('S.set.show'), 'after');
+  assert.equal(app.$('S.set.show'), 'hide');
   assert.equal(typeof app.$('S.stars'), 'object');
 });
 
@@ -47,4 +47,13 @@ test('localStorage 自体が例外を投げても起動する（プライベー�
   app.$('S = loadState()');
   app.$('save()');
   assert.equal(app.$('LS.ok'), false);
+});
+
+test('英文の表示：前の標準（聞いた後）のままなら1回だけ「タップで表示」に切り替え、選び直したら戻さない', () => {
+  const old = JSON.stringify({ v: 1, set: { show: 'after' } });
+  const a = assertLoads({ today: TODAY, storage: { 'oet-listening-commute-v1': old } });
+  assert.equal(a.$('S.set.show'), 'hide');
+  const chosen = JSON.stringify({ v: 1, showV: 2, set: { show: 'after' } });
+  const b = assertLoads({ today: TODAY, storage: { 'oet-listening-commute-v1': chosen } });
+  assert.equal(b.$('S.set.show'), 'after');
 });

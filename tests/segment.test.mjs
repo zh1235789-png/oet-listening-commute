@@ -54,3 +54,27 @@ test('試験の指示文は除き、本文は残す', () => {
   assert.deepEqual(instr(drop), drop.map(() => true), '指示文');
   assert.deepEqual(instr(keep), keep.map(() => false), '本文');
 });
+
+function segDrop(words) {
+  const code = `import sys,json; sys.path.insert(0, ${JSON.stringify(BUILD)}); from segment import segment; print(json.dumps(segment(json.loads(sys.stdin.read()), None, drop=True)))`;
+  const r = spawnSync('python3', ['-c', code], { input: JSON.stringify(words), encoding: 'utf8' });
+  if (r.status !== 0) throw new Error(r.stderr);
+  return JSON.parse(r.stdout).map((s) => s[2]);
+}
+// 文を語に分けて、時刻を付けた単語列にする（[開始秒, 文] の並びから）
+function words(lines) {
+  const out = [];
+  for (const [t0, text] of lines) text.split(' ').forEach((w, k) => out.push([t0 + k * 0.4, t0 + k * 0.4 + 0.35, ' ' + w]));
+  return out;
+}
+
+test('ナレーション（タイトル・指示文・場面の説明・切れ端）を除き、本文だけ残す', () => {
+  const out = segDrop(words([
+    [0, 'Occupational English Test, Sample Test 1, Listening Test'], [6, 'This test has three parts.'],
+    [10, "You'll have time to read the questions before you hear each extract, and you'll hear each extract once only."],
+    [20, 'Question 26. You hear a nurse briefing a colleague about a patient.'], [25, 'Now read the question.'],
+    [40, 'My'], [50, 'name is Anna and I work here.'], [53, 'Can you hear me, Mrs Wendell?'], [56, 'Okay.'],
+    [60, 'That is the end of part A. Now look at part B.'],
+  ]));
+  assert.deepEqual(out, ['My name is Anna and I work here.', 'Can you hear me, Mrs Wendell?', 'Okay.']);
+});

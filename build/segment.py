@@ -6,9 +6,8 @@
   - 文が 18秒を超え、語がカンマ等で終わる（長すぎる文は聞き返しにくい）
 各文の開始は 0.15秒早め、終了は 0.3秒遅め（前後の文とは重ならない範囲で）。
 
-drop_instructions() は試験の指示文（Now read the question. / You now have 90 seconds ... など）を除く。
-場面の説明（You hear a nurse talking to ...）は誰が話すかが分かるので残す。
-本文を誤って消さないよう、文全体が指示文の決まった形だけでできている時だけ除く。
+segment(..., drop=True) は試験のナレーション（タイトル・指示文・場面の説明）（Now read the question. / You now have 90 seconds ... など）を除く。
+本文を誤って消さないよう、決まった形に小片全体が当てはまる時と、説明に挟まれた短い切れ端だけを除く。
 """
 import re
 
@@ -69,12 +68,106 @@ def is_instruction(text):
     return bool(t)
 
 
-def drop_instructions(sents):
-    return [s for s in sents if not is_instruction(s[2])]
+# 本文の中でも、ここから先は指示文と分かる言い回し（句点が無く本文とつながって文字起こしされた時に切り分ける）
+_STRONG_RE = re.compile(r"(?:now,? )?read the questions?[.?!]?|(?:you|we) now have \S+ (?:seconds|minutes?) to [^.?!]*[.?!]?"
+                        r"|(?:that )?is the end of (?:listening )?part [abc][.?!]?|now,? (?:turn over and )?look at (?:extract|part|question|the notes)\b[^.?!]*[.?!]?"
+                        r"|complete your answers as you listen[.?!]?|extract \S+,? questions? \S+ (?:to|-) ?\S+[.?!]?", re.I)
+# 場面の説明（You hear a nurse talking to ...）。前置き（Listening part B, / Question 26. など）が付くこともある
+_SCENE_RE = re.compile(r"(?:(?:listening|listing),? )?(?:in )?(?:part [abc][.,]? )?(?:question " + N + r"[.,]? )?"
+                       r"(?:extract " + N + r"[.,]? (?:questions? " + N + r" (?:to|-) " + N + r"[.,]? )?)?"
+                       r"you(?:'re\b|(?:'ll| will)? (?:now )?(?:hear|are|be)\b)", re.I)
+# 文の頭が "You hear a/an/two ..." なら場所に関係なく場面の説明（会話では "can you hear me?" のように頭に来ない）
+_SCENE_SURE_RE = re.compile(r"(?:(?:listening|listing),? )?(?:in )?(?:part [abc][.,]? )?(?:question " + N + r"[.,]? )?"
+                            r"you hear (?:a|an|two|three|the|part|members|some)\b", re.I)
+_TITLE_RE = re.compile(r"(?:occupational english test|oet)\b[^.?!]*[.?!]?|(?:sample|practice) test(?: \S+)?[.?!]?|listening test[.?!]?"
+                       r"|this test has three parts[.?!]?|i'm going to give you the instructions for this test[.?!]?", re.I)
+SCENE_GAP = 2.5
 
 
-def segment(words, dur=None):
-    """words: [[start, end, text], ...] → [[start, end, text], ...]"""
+def _full(rx, text):
+    t = text.strip()
+    pos = 0
+    while pos < len(t):
+        m = rx.match(t, pos)
+        if not m or m.end() == pos:
+            return False
+        pos = m.end()
+        while pos < len(t) and t[pos] in ' ,.':
+            pos += 1
+    return bool(t)
+
+
+def _pieces(g):
+    """1つの文（語の並び）を、句点と指示文の切れ目で小片に分ける"""
+    text, starts = '', []
+    for w in g:
+        starts.append(len(text))
+        text += w[2]
+    cuts = {0, len(g)}
+    for k, w in enumerate(g[:-1]):
+        if _ends_sentence(w[2], 99):
+            cuts.add(k + 1)
+    for m in _STRONG_RE.finditer(text):
+        for pos in (m.start(), m.end()):
+            k = next((k for k, st in enumerate(starts) if st >= pos - 1), len(g))
+            cuts.add(k)
+    cuts = sorted(cuts)
+    return [g[a:b] for a, b in zip(cuts, cuts[1:]) if b > a]
+
+
+def _txt(ws):
+    return re.sub(r'\s+', ' ', ''.join(w[2] for w in ws)).strip()
+
+
+def drop_narration(groups):
+    """試験のナレーション（タイトル・指示文・場面の説明）を除き、本文の語の並びだけを返す。"""
+    items = []  # [語の並び, 元の文番号, 除くか]
+    for gi, g in enumerate(groups):
+        for pc in _pieces(g):
+            t = _txt(pc)
+            items.append([pc, gi, is_instruction(t) or _full(_TITLE_RE, t), len(items)])
+    # トラックの頭が説明の途中から始まっている時の切れ端（小文字で始まる）
+    if items and not items[0][2] and items[0][0][0][0] < 10.0 and re.match(r"[a-z]", _txt(items[0][0])):
+        items[0][2] = True
+    # 場面の説明：指示文か長めの無音のとなりにあるものだけ（会話の中の "you hear" は残す）
+    changed = True
+    while changed:
+        changed = False
+        for k, it in enumerate(items):
+            if it[2] or not _SCENE_RE.match(_txt(it[0])):
+                continue
+            gb = it[0][0][0] - items[k - 1][0][-1][1] if k else 99
+            ga = items[k + 1][0][0][0] - it[0][-1][1] if k + 1 < len(items) else 99
+            nb = k and items[k - 1][2]
+            na = k + 1 < len(items) and items[k + 1][2]
+            if gb >= SCENE_GAP or ga >= SCENE_GAP or nb or na or _SCENE_SURE_RE.match(_txt(it[0])):
+                it[2] = changed = True
+    # 説明と説明に挟まれた短い切れ端（"You'll have time to" + [read the questions] + "before you hear each extract..."）
+    for k in range(1, len(items) - 1):
+        if not items[k][2] and items[k - 1][2] and items[k + 1][2] and len(items[k][0]) <= 15:
+            items[k][2] = True
+    # 説明のあと、黙読時間の直前に取り残された1〜2語（"My" "I'm"）は次の本文の頭にくっつける
+    for k in range(1, len(items) - 1):
+        a, b = items[k], items[k + 1]
+        if not a[2] and items[k - 1][2] and len(a[0]) <= 2 and not b[2] and b[0][0][0] - a[0][-1][1] >= 3.0:
+            b[0] = [[b[0][0][0], b[0][0][0], w[2]] for w in a[0]] + b[0]
+            a[2] = True
+    keep = [it for it in items if not it[2]]
+    # 同じ文から来た小片は1文に戻す（間に除いた小片があれば戻さない）
+    out = []
+    for it in keep:
+        if not it[0]:
+            continue
+        if out and out[-1][1] == it[1] and out[-1][2] == it[3] - 1:
+            out[-1][0] = out[-1][0] + it[0]
+            out[-1][2] = it[3]
+        else:
+            out.append([it[0], it[1], it[3]])
+    return [o[0] for o in out]
+
+
+def segment(words, dur=None, drop=False):
+    """words: [[start, end, text], ...] → [[start, end, text], ...]。drop=True でナレーションを除く"""
     words = [w for w in words if w[2].strip()]
     groups, cur = [], []
     for i, w in enumerate(words):
@@ -85,6 +178,8 @@ def segment(words, dur=None):
         if nxt is None or _ends_sentence(w[2], len(cur)) or gap >= GAP or long_:
             groups.append(cur)
             cur = []
+    if drop:
+        groups = drop_narration(groups)
     out = []
     for gi, g in enumerate(groups):
         prev_end = groups[gi - 1][-1][1] if gi else 0.0

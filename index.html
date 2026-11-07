@@ -125,7 +125,7 @@ input[type=password],input[type=text]{width:100%;padding:10px;border-radius:10px
 <script>
 /* global TextEncoder, TextDecoder, MediaMetadata */
 'use strict';
-const APP_VERSION = '2026.11.06-1803';
+const APP_VERSION = '2026.11.07-1330';
 const FLOW_SKIP = 3; // 通し：文の間がこの秒数以上あけば飛ばす
 const STORE_KEY = 'oet-listening-commute-v1';
 const PASS_KEY = 'oet-listening-commute-pass';
@@ -142,7 +142,7 @@ const LS = {
 };
 function defaultState(){
   return { v:1, pos:{}, far:{}, stars:{}, days:{}, last:null,
-    set:{ mode:'step', reps:2, gap:0.5, speed:1, show:'after', fs:18 } };
+    set:{ mode:'step', reps:2, gap:0.5, speed:1, show:'hide', fs:18 }, showV:2 };
 }
 function loadState(){
   const d = defaultState();
@@ -153,7 +153,9 @@ function loadState(){
   d.last = typeof s.last === 'string' ? s.last : null;
   if (s.set && typeof s.set === 'object') Object.assign(d.set, s.set);
   if (!['step','repeat','flow'].includes(d.set.mode)) d.set.mode = 'step';
-  if (!['after','always','hide'].includes(d.set.show)) d.set.show = 'after';
+  // 2026-11-07：英文は最初は隠してタップで表示、を標準にした。前の標準（聞いた後）のままの人は1回だけ切り替える
+  if (s.showV !== 2 && d.set.show === 'after') d.set.show = 'hide';
+  if (!['after','always','hide'].includes(d.set.show)) d.set.show = 'hide';
   if (!SPEEDS.includes(d.set.speed)) d.set.speed = 1;
   if (!GAPS.includes(d.set.gap)) d.set.gap = 0.5;
   if (![2,3,5].includes(d.set.reps)) d.set.reps = 2;
@@ -533,7 +535,7 @@ function playView(){
     <div class="optrow ${S.set.mode === 'repeat' ? '' : 'hide'}"><span>回数</span>${segBtns('reps', [[2,'2回'],[3,'3回'],[5,'5回']], S.set.reps)}</div>
     <div class="optrow ${S.set.mode === 'repeat' ? '' : 'hide'}"><span>文の間</span>${segBtns('gap', [[0,'なし'],[0.5,'×0.5'],[1,'×1'],[1.5,'×1.5']], S.set.gap)}</div>
     <div class="optrow"><span>速さ</span>${segBtns('speed', SPEEDS.map(v => [v, v + '×']), S.set.speed)}</div>
-    <div class="optrow"><span>英文</span>${segBtns('show', [['hide','隠す'],['after','聞いた後'],['always','常に']], S.set.show)}</div>
+    <div class="optrow"><span>英文</span>${segBtns('show', [['hide','タップ'],['after','聞いた後'],['always','常に']], S.set.show)}</div>
   </div>
   <details class="card" id="scriptbox" ${UI.script ? 'open' : ''}><summary class="muted">スクリプト全体（${tr.sents.length}文）</summary>
     <div class="script" id="script" style="margin-top:8px">${scriptHtml(tr)}</div></details>
@@ -545,7 +547,7 @@ function sentInner(tr, i){
   const st = isStarred(tr, i);
   const show = revealed(i) || UI.peek === i;
   const body = show ? `<div class="txt">${esc(s[2])}</div>`
-    : `<div class="hid">${S.set.show === 'hide' ? '英文は隠しています（タップで表示）' : '聞いたら表示されます（タップで先に見る）'}</div>`;
+    : `<div class="hid">${S.set.show === 'hide' ? 'タップで英文を表示' : '聞いたら表示されます（タップで先に見る）'}</div>`;
   return `<span class="no">${fmtTime(s[0])}</span><button class="starbtn ${st ? 'on' : ''}" id="bstar" aria-label="聞き返す文に追加">${st ? '★' : '☆'}</button>${body}`;
 }
 function scriptHtml(tr){
