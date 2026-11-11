@@ -72,6 +72,7 @@ h3{font-size:12px;letter-spacing:.06em;color:var(--dim);margin:18px 0 8px}
 .sent{min-height:150px;display:flex;flex-direction:column;justify-content:center;font-size:var(--fs);line-height:1.6;
   font-family:Georgia,"Times New Roman",serif;cursor:pointer;position:relative}
 .sent .hid{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;color:var(--faint);font-size:14px;text-align:center}
+.sent .ja,.rv .ja{display:block;margin-top:8px;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans",sans-serif;font-size:calc(var(--fs) - 4px);line-height:1.6;color:var(--dim)}
 .sent .txt.blur{filter:blur(7px);user-select:none}
 .sent .no{position:absolute;top:0;left:0;font-family:-apple-system,sans-serif;font-size:11px;color:var(--faint)}
 .starbtn{position:absolute;top:-6px;right:-6px;background:none;border:none;font-size:24px;padding:6px;color:var(--faint)}
@@ -125,7 +126,7 @@ input[type=password],input[type=text]{width:100%;padding:10px;border-radius:10px
 <script>
 /* global TextEncoder, TextDecoder, MediaMetadata */
 'use strict';
-const APP_VERSION = '2026.11.07-1330';
+const APP_VERSION = '2026.11.11-2230';
 const FLOW_SKIP = 3; // 通し：文の間がこの秒数以上あけば飛ばす
 const STORE_KEY = 'oet-listening-commute-v1';
 const PASS_KEY = 'oet-listening-commute-pass';
@@ -546,10 +547,12 @@ function sentInner(tr, i){
   const s = tr.sents[i]; if (!s) return '';
   const st = isStarred(tr, i);
   const show = revealed(i) || UI.peek === i;
-  const body = show ? `<div class="txt">${esc(s[2])}</div>`
+  const body = show ? `<div class="txt">${esc(s[2])}</div>${jaHtml(s)}`
     : `<div class="hid">${S.set.show === 'hide' ? 'タップで英文を表示' : '聞いたら表示されます（タップで先に見る）'}</div>`;
   return `<span class="no">${fmtTime(s[0])}</span><button class="starbtn ${st ? 'on' : ''}" id="bstar" aria-label="聞き返す文に追加">${st ? '★' : '☆'}</button>${body}`;
 }
+// 和訳（build/translate.py が作った分だけ。無い文は英文だけ）
+function jaHtml(s){ return s && s[3] ? `<div class="ja">${esc(s[3])}</div>` : ''; }
 function scriptHtml(tr){
   return tr.sents.map((s, i) => {
     const open = S.set.show === 'always' || (S.far[tr.id] ?? -1) >= i || P.heard.has(i);
@@ -614,7 +617,7 @@ function reviewView(){
     Object.entries(byTr).map(([id, its]) => {
       const tr = TRACKS[id];
       return `<div class="card"><div class="thead" style="margin-bottom:4px"><span class="pill ${tr.part}">${tr.part || '全'}</span><b>${esc(tr.test.title)} ${esc(tr.label)}</b></div>` +
-        its.map(it => `<div class="rv"><button data-q="${list.indexOf(it)}" aria-label="再生">▶</button><span class="t ${S.set.show === 'always' ? '' : 'blur'}" data-reveal>${esc(tr.sents[it.i][2])}</span><button data-unstar="${esc(it.k)}" aria-label="外す">✕</button></div>`).join('') + `</div>`;
+        its.map(it => `<div class="rv"><button data-q="${list.indexOf(it)}" aria-label="再生">▶</button><span class="t ${S.set.show === 'always' ? '' : 'blur'}" data-reveal>${esc(tr.sents[it.i][2])}${tr.sents[it.i][3] ? `<span class="ja">${esc(tr.sents[it.i][3])}</span>` : ''}</span><button data-unstar="${esc(it.k)}" aria-label="外す">✕</button></div>`).join('') + `</div>`;
     }).join('');
 }
 function settingsView(){

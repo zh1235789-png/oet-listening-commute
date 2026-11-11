@@ -80,6 +80,11 @@ def main():
     key, pw = audio_key(), passphrase()
     (ROOT / 'a').mkdir(exist_ok=True)
     tests, missing, thin = [], [], []
+    try:  # 和訳（build/translate.py）。無い文は英文だけで出す
+        ja = json.loads((PRIVATE / 'ja.json').read_text(encoding='utf-8'))
+    except FileNotFoundError:
+        ja = {}
+    n_ja = 0
     for t in scan():
         tracks = []
         for tr in t['tracks']:
@@ -95,6 +100,10 @@ def main():
                 out.write_bytes(enc)
             d = json.loads(tj.read_text(encoding='utf-8'))
             sents = segment(d['words'], d.get('dur'), drop=True)  # 試験のナレーションは除く
+            for s in sents:
+                if s[2] in ja:
+                    s.append(ja[s[2]])
+                    n_ja += 1
             if not sents:
                 raise SystemExit(f"{tr['id']}: 文が0件")
             wpm = len(d['words']) / (d['dur'] / 60)
@@ -127,7 +136,7 @@ def main():
     n_tr = sum(len(t['tracks']) for t in tests)
     n_s = sum(len(tr['sents']) for t in tests for tr in t['tracks'])
     size = sum(tr['size'] for t in tests for tr in t['tracks'])
-    print(f'{len(tests)}テスト・{n_tr}トラック・{n_s}文・音声{size/1e6:.0f}MB  v{ver}')
+    print(f'{len(tests)}テスト・{n_tr}トラック・{n_s}文（和訳 {n_ja}文）・音声{size/1e6:.0f}MB  v{ver}')
     if missing:
         print(f'未処理（音声か文字起こしが無い）{len(missing)}件: {" ".join(missing)}')
 

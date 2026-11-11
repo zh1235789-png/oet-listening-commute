@@ -13,6 +13,8 @@ caffeinate -i ~/whisper-env/bin/python build/prepare.py 2>&1 | grep --line-buffe
 [ ${pipestatus[1]} -eq 0 ] || fail "prepare.py（文字起こし）"
 echo "== $(date '+%F %T') prepare 終了"
 
+python3 build/translate.py || fail "translate.py（和訳）"
+
 python3 build/build.py || fail "build.py"
 node --test "tests/*.test.mjs" > /tmp/oet-lc-test.log 2>&1 || { grep -E "^✖|^ℹ (pass|fail)" /tmp/oet-lc-test.log; fail "テスト（push しない）"; }
 grep -E "^ℹ (pass|fail)" /tmp/oet-lc-test.log
