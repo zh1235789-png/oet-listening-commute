@@ -143,7 +143,7 @@ const LS = {
 };
 function defaultState(){
   return { v:1, pos:{}, far:{}, stars:{}, days:{}, last:null,
-    set:{ mode:'step', reps:2, gap:0.5, speed:1, show:'hide', fs:18 }, showV:2 };
+    set:{ mode:'step', reps:2, gap:0.5, speed:1, show:'hide', fs:18, list:'all' }, showV:2 };
 }
 function loadState(){
   const d = defaultState();
@@ -158,6 +158,7 @@ function loadState(){
   if (s.showV !== 2 && d.set.show === 'after') d.set.show = 'hide';
   if (!['after','always','hide'].includes(d.set.show)) d.set.show = 'hide';
   if (!SPEEDS.includes(d.set.speed)) d.set.speed = 1;
+  if (!['all','saved'].includes(d.set.list)) d.set.list = 'all';
   if (!GAPS.includes(d.set.gap)) d.set.gap = 0.5;
   if (![2,3,5].includes(d.set.reps)) d.set.reps = 2;
   return d;
@@ -588,19 +589,24 @@ function helpCard(){
     <li>一度再生したパートは端末に保存され、圏外でも聞けます。地下鉄の前に「一覧」で保存しておくと安心です。</li></ul></div>`;
 }
 function listView(){
+  const onlySaved = S.set.list === 'saved';
   const groups = [];
-  for (const t of TESTS){ let g = groups.find(x => x.name === t.group); if (!g){ g = { name:t.group, tests:[] }; groups.push(g); } g.tests.push(t); }
+  for (const t of TESTS){
+    if (onlySaved && !t.tracks.some(tr => SAVED.has(tr.id))) continue;  // 保存済みだけ：1トラックも保存していないテストは出さない
+    let g = groups.find(x => x.name === t.group); if (!g){ g = { name:t.group, tests:[] }; groups.push(g); } g.tests.push(t); }
   const allSize = Object.values(TRACKS).reduce((a, t) => a + t.size, 0);
   const savedSize = Object.values(TRACKS).filter(t => SAVED.has(t.id)).reduce((a, t) => a + t.size, 0);
   return `<div class="card"><div class="thead"><b>端末に保存（圏外用）</b><span class="tiny">${fmtMB(savedSize)} / ${fmtMB(allSize)}</span></div>
       <p class="tiny" id="dlmsg">${esc(DL.msg)}</p>
-      <button class="bigbtn ghost" id="saveall" ${DL.busy ? 'disabled' : ''}>⬇ 全部保存する</button></div>` +
+      <button class="bigbtn ghost" id="saveall" ${DL.busy ? 'disabled' : ''}>⬇ 全部保存する</button>
+      <div class="optrow"><span>表示</span>${segBtns('list', [['all','すべて'],['saved','保存済みだけ']], S.set.list)}</div></div>` +
+    (onlySaved && !groups.length ? `<div class="card"><p class="muted">まだ保存した音源がありません。「すべて」に戻して ⬇ で保存してください。</p></div>` : '') +
     groups.map(g => `<h3>${esc(g.name)}</h3>` + g.tests.map(t => {
       const allSaved = t.tracks.every(tr => SAVED.has(tr.id));
       const size = t.tracks.reduce((a, x) => a + x.size, 0);
       return `<div class="card test"><div class="thead"><b>${esc(t.title)}</b>
         <button class="dl" data-save="${t.id}" ${allSaved || DL.busy ? 'disabled' : ''}>${allSaved ? '✓ 保存済み' : '⬇ ' + fmtMB(size)}</button></div>
-        <div class="tracks">${t.tracks.map(tr => {
+        <div class="tracks">${t.tracks.filter(tr => !onlySaved || SAVED.has(tr.id)).map(tr => {
           const pr = trackProgress(tr.id);
           return `<button class="tr ${P.tr === tr ? 'cur' : ''}" data-open="${tr.id}">${esc(tr.label)}${SAVED.has(tr.id) ? ' <span class="tiny">✓</span>' : ''}<small>${fmtTime(tr.dur)} · ${Math.round(pr * 100)}%</small><span class="bar" style="width:${(pr * 100).toFixed(0)}%"></span></button>`;
         }).join('')}</div></div>`;
